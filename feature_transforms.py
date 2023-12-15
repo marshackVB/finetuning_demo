@@ -1,6 +1,9 @@
 # Databricks notebook source
 # MAGIC %md
-# MAGIC ## Download and transform pre-training data; write documents to S3
+# MAGIC ## Feature transformations for continued pretraining
+# MAGIC   1. Download datasets from the huggingface datasets hub
+# MAGIC   2. Combind sentences into documents
+# MAGIC   3. Write documents to S3
 
 # COMMAND ----------
 
@@ -30,7 +33,7 @@ from composer.utils import ObjectStore, maybe_create_object_store_from_uri
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC Download pre-training data from Huggingface
+# MAGIC Download pre-training data from the Huggingface datasets hub
 
 # COMMAND ----------
 
@@ -80,11 +83,16 @@ def dataset_to_dataframes(data_subset="small_lite"):
 
 # COMMAND ----------
 
-train, validation, test = dataset_to_dataframes()
+train_sentences, validation_sentences, test_sentences = dataset_to_dataframes()
 
 # COMMAND ----------
 
-display(train)
+# MAGIC %md
+# MAGIC Data is at a sentence level where sentences are ordered ('sentence_count') to create a document ('document_id'). Document correspond to different companies (identified by unique 'cik')
+
+# COMMAND ----------
+
+display(train_sentences)
 
 # COMMAND ----------
 
@@ -106,8 +114,8 @@ def convert_sentences_to_documents(spark_df):
                                 Window.partitionBy("doc_id")
                                       .orderBy(col("sentence_count").asc())))
                        .join(sentence_counts_by_doc, 
-                            ((train.doc_id == sentence_counts_by_doc.doc_id) &
-                            (train.sentence_count==sentence_counts_by_doc.total_sentences)), 
+                            ((spark_df.doc_id == sentence_counts_by_doc.doc_id) &
+                             (spark_df.sentence_count==sentence_counts_by_doc.total_sentences)), 
                             "inner")
                        .drop(sentence_counts_by_doc.doc_id)
                        .withColumn("doc", func.concat_ws(" ", col("doc_array")))
@@ -117,13 +125,21 @@ def convert_sentences_to_documents(spark_df):
 
 # COMMAND ----------
 
-docs = convert_sentences_to_documents(train).limit(10)
-display(docs)
+train_docs = convert_sentences_to_documents(train_sentences)
+validation_docs = convert_sentences_to_documents(validation_sentences)
+display(train_docs)
+
+# COMMAND ----------
+
+train_docs_cnt = train_docs.count()
+validation_docs_cnt = validation_docs.count()
+
+print(f"Training docs: {train_docs_cnt}, Validation docs: {validation_docs_cnt}")
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC Write documents to S3
+# MAGIC Write training and evalution documents to S3
 
 # COMMAND ----------
 
@@ -161,14 +177,19 @@ def config_s3_writer(id_col, text_col, s3_bucket, s3_folder):
 
 spark_schema = StructType()
 spark_schema.add("file_path", StringType())
-  
-s3_writer_udf = config_s3_writer(id_col="doc_id", 
-                                 text_col="doc", 
-                                 s3_bucket="s3://mosaicml-demo/", 
-                                 s3_folder="data")
-                                 
-s3_training_files = (docs.repartition(10, "doc_id")
-                         .groupBy('doc_id')
-                         .applyInPandas(s3_writer_udf, schema=spark_schema))
 
-s3_training_files.write.mode('overwrite').format('delta').saveAsTable('default.mlc_mosaic_file_paths')
+data_params = [(train_docs_cnt, "data/train", train_docs),
+               (validation_docs_cnt, "data/validation", validation_docs)]
+
+for doc_cnt, save_folder, spark_df in data_params:
+  
+  s3_writer_udf = config_s3_writer(id_col="doc_id", 
+                                  text_col="doc", 
+                                  s3_bucket="s3://mosaicml-demo/", 
+                                  s3_folder=save_folder)
+                                  
+  s3_training_files = (spark_df.repartition(doc_cnt, "doc_id")
+                               .groupBy('doc_id')
+                               .applyInPandas(s3_writer_udf, schema=spark_schema))
+
+  s3_training_files.write.mode('overwrite').format('delta').saveAsTable(f"default.mlc_mosaic_file_paths_{save_folder.split('/')[0]}")
