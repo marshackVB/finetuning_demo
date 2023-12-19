@@ -1,0 +1,9 @@
+model: mosaicml/mpt-7b
+task_type: CONTINUED_PRETRAIN
+train_data_path: s3://mosaicml-demo/data/train
+eval_data_path: s3://mosaicml-demo/data/validation
+save_folder: s3://mosaicml-demo/checkpoints
+training_duration: 3ep
+experiment_trackers:
+  integration_type: mlflow  
+  experiment_name: /Users/marshall.carter@databricks.com/finetune_experiment
