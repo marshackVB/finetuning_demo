@@ -1,9 +1,13 @@
 # Databricks notebook source
 # MAGIC %md
-# MAGIC ## Feature transformations for continued pretraining
+# MAGIC # Feature transformations for continued pretraining
 # MAGIC   1. Download datasets from the huggingface datasets hub
-# MAGIC   2. Combind sentences into documents
+# MAGIC   2. Combine sentences into documents
 # MAGIC   3. Write documents to S3
+
+# COMMAND ----------
+
+# MAGIC %md ## Library installs & imports
 
 # COMMAND ----------
 
@@ -32,8 +36,11 @@ from composer.utils import ObjectStore, maybe_create_object_store_from_uri
 
 # COMMAND ----------
 
-# MAGIC %md
-# MAGIC Download pre-training data from the Huggingface datasets hub
+# MAGIC %run ./config
+
+# COMMAND ----------
+
+# MAGIC %md ## Download & reshape pre-training data from the Huggingface datasets hub
 
 # COMMAND ----------
 
@@ -139,7 +146,7 @@ print(f"Training docs: {train_docs_cnt}, Validation docs: {validation_docs_cnt}"
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC Write training and evalution documents to S3
+# MAGIC ## Write training and evaluation documents to S3
 
 # COMMAND ----------
 
@@ -164,7 +171,7 @@ def config_s3_writer(id_col, text_col, s3_bucket, s3_folder):
       with open(local_text_file_path, 'w') as _txt_file:
         _txt_file.write(text_to_dump)
 
-      object_name = f"{s3_folder}/{text_file_name}"
+      object_name = os.path.join(s3_folder, text_file_name)
     
       object_store.upload_object(object_name=object_name,
                                  filename=str(local_text_file_path))
@@ -178,18 +185,18 @@ def config_s3_writer(id_col, text_col, s3_bucket, s3_folder):
 spark_schema = StructType()
 spark_schema.add("file_path", StringType())
 
-data_params = [(train_docs_cnt, "data/train", train_docs),
-               (validation_docs_cnt, "data/validation", validation_docs)]
+data_params = [(train_docs_cnt, config["s3_folder_continued_pretrain_train"], train_docs),
+               (validation_docs_cnt, config["s3_folder_continued_pretrain_validation"], validation_docs)]
 
 for doc_cnt, save_folder, spark_df in data_params:
   
   s3_writer_udf = config_s3_writer(id_col="doc_id", 
                                   text_col="doc", 
-                                  s3_bucket="s3://mosaicml-demo/", 
+                                  s3_bucket=config["s3_bucket"],
                                   s3_folder=save_folder)
                                   
   s3_training_files = (spark_df.repartition(doc_cnt, "doc_id")
                                .groupBy('doc_id')
                                .applyInPandas(s3_writer_udf, schema=spark_schema))
 
-  s3_training_files.write.mode('overwrite').format('delta').saveAsTable(f"default.mlc_mosaic_file_paths_{save_folder.split('/')[0]}")
+  s3_training_files.write.mode('overwrite').format('delta').saveAsTable(f"{config['uc_schema']}.{config['uc_table']}_{save_folder.split('/')[-1]}")

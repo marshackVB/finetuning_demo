@@ -1,0 +1,11 @@
+model: mosaicml/mpt-7b
+task_type: INSTRUCTION_FINETUNE
+custom_weights_path: s3://mosaicml-demo/checkpoints/contd-pretrain-mpt-7b-onguvl/checkpoints/ep3-ba102-rank0.pt
+train_data_path: mosaicml/instruct-v3/train
+eval_data_path: mosaicml/instruct-v3/test
+save_folder: s3://mosaicml-demo/checkpoints
+training_duration: 3ep
+experiment_trackers:
+  integration_type: mlflow  
+  experiment_name: /Users/marshall.carter@databricks.com/finetune_experiment
+  model_registry_prefix: main.timl_mosaic
