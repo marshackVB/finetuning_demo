@@ -37,10 +37,10 @@ MosaicML will need access to a Databricks workspace to log metrics and model che
 2. Create a [Databricks secret in mcli](https://docs.mosaicml.com/projects/mcli/en/latest/resources/secrets/databricks.html) using this PAT
 
 ### Unity Catalog
-We recommend creating a UC schema (`uc_schema` config) for this workshop. It will hold the training data tables (`uc_table` prefix config) and the registered, fine-tuned LLM. The fine-tuning API logs the final model checkpoint directly into the UC model registry in the transformers mlflow model flavor, so it can easily be deployed for optimized model serving 
+We recommend creating a UC schema (`uc_schema` config) for this workshop. It will hold the training data tables (`uc_table` prefix config) and the registered, fine-tuned LLM. The fine-tuning API logs the final model checkpoint directly into the UC model registry in the transformers mlflow model flavor, so it can easily be deployed for optimized model serving.
 
 ### MLflow 
-We recommend creating an MLflow experiment for each combination of training data and model training objective. In this case, that's an experiment for the continued pretraining step (`mlflow_experiment_name_cpt` config) and an experiment for the instruction fine-tuning step (`mlflow_experiment_name_ift` config). The fine-tuning API will log the training run configuration, metrics and (optionally) sample prompt generations directly to MLflow
+We recommend creating an MLflow experiment for each combination of training data and model training objective. In this case, that's an experiment for the continued pretraining step (`mlflow_experiment_name_cpt` config) and an experiment for the instruction fine-tuning step (`mlflow_experiment_name_ift` config). The fine-tuning API will log the training run configuration, metrics and (optionally) sample prompt generations directly to MLflow.
 
 ### Compute
 The heavy lifting of LLM fine-tuning will be handled by MosaicML's serverless compute service, MCloud. On the Databricks side, you just need a modest compute cluster to run data prep workloads, and to interact with the model serving endpoint. For this, a small cluster running MLR 13.3 LTS or later will suffice. Only CPUs are needed. 
