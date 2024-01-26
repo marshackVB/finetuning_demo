@@ -4,7 +4,7 @@ MosaicML makes fine-tuning and pretraining LLMs much easier and more scalable th
 1. Set up a development environment to use the Databricks-MosaicML integration
 2. Acquire source data for continued pretraining and fine-tuning tasks
 3. Use PySpark to process the raw source data into a format amenable to MosaicML
-4. Use the MosaicML CLI/SKD to carry out the fine-tuning tasks
+4. Use the MosaicML CLI/SDK to carry out the fine-tuning tasks
 5. Review the model training metrics and sample prompts in MLflow, and the training logs in MCLI
 6. Provision a model serving endpoint from the custom model that was registered to Unity Catalog
 7. Evaluate model performance on new prompts
