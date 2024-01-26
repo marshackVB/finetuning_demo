@@ -12,7 +12,7 @@ MosaicML makes fine-tuning and pretraining LLMs much easier and more scalable th
 The demo will adapt an existing MosaicML end-to-end [demo](https://github.com/mosaicml/examples/tree/main/examples/end-to-end-examples/sec_10k_qa) to leverage much of the integrated Databricks-MosaicML stack as of this writing (December 2023).
 
 ## Prerequisites
-We recommend completing all of the prerequisites before attempting to run any of the notebooks. Any key resources created in the prequisites and needed in the workshop will be referenced in the `config` notebook. We will identify them as we go.
+We recommend completing all of the prerequisites before attempting to run any of the notebooks. Any key resources created in the prerequisites and needed in the workshop will be referenced in the `config` notebook. We will identify them as we go.
 
 ### MosaicML account
 If you don't already have an account, request access to the MosaicML playground & fine-tuning API through go/getfinetuning. More details are available in the [fine-tuning launch email](https://docs.google.com/document/d/1D8z0Y4iRgQOLXQr2VclCQvpzxnu0_nWT5x8iSkXKml8/edit) sent to bricksters. 
