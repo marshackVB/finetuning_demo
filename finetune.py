@@ -19,7 +19,6 @@ import os
 import requests
 import json
 import mcli
-from mcli import finetune
 
 # COMMAND ----------
 
@@ -40,17 +39,19 @@ mcli.set_api_key(
 
 # COMMAND ----------
 
-continued_pretraining = finetune(
+continued_pretraining = mcli.create_finetuning_run(
         model="mosaicml/mpt-7b",
         task_type='CONTINUED_PRETRAIN',
         train_data_path=os.path.join(config["s3_bucket"], config["s3_folder_continued_pretrain_train"]),
         eval_data_path=os.path.join(config["s3_bucket"], config["s3_folder_continued_pretrain_validation"]),
         save_folder=os.path.join(config["s3_bucket"], config["s3_folder_checkpoints_cpt"]),
         training_duration=config['cpt_duration'],
-        experiment_trackers=[{
-            'integration_type': 'mlflow',
-            'experiment_name': config["mlflow_experiment_name_cpt"]
-        }],
+        experiment_tracker={
+            "mlflow": {
+                "experiment_path": config["mlflow_experiment_name_cpt"],
+                "model_registry_path": config['uc_schema']
+            }
+        }
 )
 
 # COMMAND ----------
@@ -69,7 +70,7 @@ mcli.get_run(continued_pretraining.name)
 # COMMAND ----------
 
 run_info = mcli.get_run(continued_pretraining.name)
-run_info.submitted_config.
+run_info.submitted_config
 
 # COMMAND ----------
 
@@ -89,7 +90,7 @@ cpt_checkpoint_path
 
 # COMMAND ----------
 
-instruction_finetune = finetune(
+instruction_finetune = mcli.create_finetuning_run(
     model="mosaicml/mpt-7b",
     custom_weights_path=cpt_checkpoint_path,
     task_type='INSTRUCTION_FINETUNE',
@@ -97,11 +98,12 @@ instruction_finetune = finetune(
     eval_data_path="mosaicml/instruct-v3/test",
     save_folder=os.path.join(config["s3_bucket"], config["s3_folder_checkpoints_ift"]),
     training_duration=config['ift_duration'],
-    experiment_trackers=[{
-         'integration_type': 'mlflow',
-         'experiment_name': config["mlflow_experiment_name_ift"],
-         'model_registry_prefix': config['uc_schema']
-      }],
+    experiment_tracker={
+        "mlflow": {
+            "experiment_path": config["mlflow_experiment_name_ift"],
+            "model_registry_path": config['uc_schema']
+        }
+    }
 )
 
 # COMMAND ----------
